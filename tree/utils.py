@@ -12,12 +12,15 @@ def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
 
     pass
 
-def check_ifreal(y: pd.Series) -> bool:
+def check_ifreal(y: pd.Series, threshold = 0.1) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
-    
-    pass
+    unique_nums = y.nunique()
+    total_nums = len(y)
+    if(unique_nums/total_nums < threshold):
+        return False
+    return True
 
 
 def entropy(Y: pd.Series) -> float:

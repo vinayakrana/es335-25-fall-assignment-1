@@ -42,7 +42,7 @@ def gini_index(Y: pd.Series) -> float:
     p = uniques/total
     return (1 - np.sum(p**2))
 
- def MSE(Y: pd.Series)->float:
+def MSE(Y: pd.Series)->float:
     """
     Function to calculate the MSE
     """
@@ -51,31 +51,84 @@ def gini_index(Y: pd.Series) -> float:
     return ans
 
  
-def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
-   
-   #Function to calculate the information gain using criterion (entropy, gini index or MSE)
-    
+def check_criteria(Y: pd.Series, attr: pd.Series, criterion: str) -> None:
+    """
+    Function to check which criterion to use out of the 4 possible conditions of I/P and O/P
+    """
+    fn = None
     # (, Discrete)
     if (check_ifreal(Y)==False):
-        
-        # (Discrete, Discrete)
-        if (check_ifreal(attr)==False):
-            if (criterion=='entropy'):
-                return (entropy(Y) - )
-            elif (criterion=='gini index'):
-                return (gini_index(Y) - )
-        # (Real, Discrete)
-        else:
-            if (criterion=='mse'):
-                return (mse_reduction(Y) - )
-            
+        # Using Entropy/GiniIndex
+        if (criterion=='entropy'):
+            fn = entropy
+        elif (criterion=='gini index'):
+            fn = gini_index
+
     # (, Real)
     else:
-        
-        # (Discrete, Real)
-        if (check_ifreal(attr)==False):
-        
-        # (Real, Real)
+        fn = MSE
+
+def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
+    """
+    Function to find the optimal threshold for a real feature
+
+    Returns the threshold value for best split in a given real feature
+    """
+    sorted_attr = attr.sort_values()
+    if sorted_attr.size == 1:
+        return None
+    elif sorted_attr.size == 2:
+        return (sorted_attr.sum()) / 2
+    split_points = (sorted_attr[:-1] + sorted_attr[1:]) / 2
+    
+    best_threshold = None
+    best_gain = -np.inf
+
+    for threshold in split_points:
+        Y_left = Y[attr <= threshold]
+        Y_right = Y[attr > threshold]
+
+        if Y_left.empty or Y_right.empty:
+            continue
+
+        total_criterion = Y_left.size / Y.size * check_criteria(Y_left) + Y_right.size / Y.size * check_criteria(Y_right)
+        information_gain_value = check_criteria(Y) - total_criterion
+
+        if information_gain_value > best_gain:
+            best_threshold = threshold
+            best_gain = information_gain_value
+
+    return best_threshold
+
+
+
+def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
+    """
+    Function to calculate the information gain using criterion_fn (entropy, gini index or MSE)
+    """
+    criterion_fn = check_criteria(Y, attr, criterion)
+
+    # Attribute is Real
+    if (check_ifreal(attr)):
+        threshold = find_optimal_threshold(Y, attr, criterion)
+        if threshold is None:
+            return 0
+        top = Y[attr <= threshold]
+        top_p = top.size()/Y.size()
+        bottom = Y[attr > threshold]
+        bottom_p = bottom.size()/Y.size()
+        return criterion_fn(Y) - (top_p*criterion_fn(top) + bottom_p*criterion_fn(bottom))
+
+    # Attribute is Discrete
+    else:
+        weighted_H = 0
+        for unique in attr.unique():
+            sub_attr = Y[attr==unique]
+            sub_attr_p = np.size(sub_attr)/np.size(attr)
+            weighted_H += sub_attr_p*criterion_fn(sub_attr)
+        return criterion_fn(Y) - weighted_H
+
+
 
 def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.Series):
     """
@@ -96,11 +149,9 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
         current_gain = information_gain(y, X[feature], criterion)
         if(current_gain > best_info_gain):
             best_info_gain = current_gain
-            ont_split = feature
+            opt_split = feature
 
     return opt_split, best_info_gain
-
-    pass
 
 def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
     """

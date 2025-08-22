@@ -4,6 +4,7 @@ There is no restriction on following the below template, these fucntions are her
 """
 
 import pandas as pd
+import numpy as np
 
 def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
     """
@@ -40,6 +41,13 @@ def gini_index(Y: pd.Series) -> float:
 
     pass
 
+def MSE(Y: pd.Series)->float:
+    """
+    Function to calculate the MSE
+    """
+    y_mean=np.mean(Y)
+    ans=np.sum((Y-y_mean)**2)/len(Y)
+    return ans
 
 def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """

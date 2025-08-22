@@ -16,7 +16,7 @@ def check_ifreal(y: pd.Series) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
-    print(1)
+    
     pass
 
 

@@ -112,5 +112,16 @@ def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
     """
 
     # Split the data based on a particular value of a particular attribute. You may use masking as a tool to split the data.
+    if check_ifreal(X[attribute]):
+        left_X = X[X[attribute] <= value]
+        right_X = X[X[attribute] > value]
+    else:
+        left_X = X[X[attribute] == value]
+        right_X = X[X[attribute] != value]
 
-    pass
+    left_y = y[left_X.index]
+    right_y = y[right_X.index]
+
+    return left_X, right_X, left_y, right_y
+
+    

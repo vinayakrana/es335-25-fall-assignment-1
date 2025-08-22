@@ -9,6 +9,11 @@ def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
     """
     Function to perform one hot encoding on the input data
     """
+    for col in X.columns:
+        if X[col].dtype == "object":
+            X = pd.concat([X, pd.get_dummies(X[col], prefix=col,dtype=int)], axis=1)
+            X.drop(col, axis=1, inplace=True)
+    return X
 
     pass
 

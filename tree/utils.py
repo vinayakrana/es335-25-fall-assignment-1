@@ -21,25 +21,48 @@ def check_ifreal(y: pd.Series) -> bool:
 
 
 def entropy(Y: pd.Series) -> float:
-    """
-    Function to calculate the entropy
-    """
-
-    pass
+    uniques = Y.value_counts()
+    total = np.size(Y)
+    p = uniques/total
+    return np.sum(-p*np.log2(p))
 
 
 def gini_index(Y: pd.Series) -> float:
-    """
-    Function to calculate the gini index
-    """
-
-    pass
+    uniques = Y.value_counts()
+    total = np.size(Y)
+    p = uniques/total
+    return (1 - np.sum(p**2))
 
 
 def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
     Function to calculate the information gain using criterion (entropy, gini index or MSE)
     """
+    
+    # (, Discrete)
+    if (check_ifreal(Y)==False):
+        
+        # (Discrete, Discrete)
+        if (check_ifreal(attr)==False):
+            if (criterion=='entropy'):
+                return (entropy(Y) - )
+            elif (criterion=='gini index'):
+                return (gini_index(Y) - )
+        # (Real, Discrete)
+        else:
+            if (criterion=='entropy'):
+                return (entropy(Y) - )
+            elif (criterion=='gini index'):
+                return (gini_index(Y) - )
+            
+    # (, Real)
+    else:
+        
+        # (Discrete, Real)
+        if (check_ifreal(attr)==False):
+        
+        # (Real, Real)
+        
 
     pass
 

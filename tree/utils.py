@@ -4,20 +4,29 @@ There is no restriction on following the below template, these fucntions are her
 """
 
 import pandas as pd
+import numpy as np
 
 def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
     """
     Function to perform one hot encoding on the input data
     """
+    for col in X.columns:
+        if X[col].dtype == "object":
+            X = pd.concat([X, pd.get_dummies(X[col], prefix=col,dtype=int)], axis=1)
+            X.drop(col, axis=1, inplace=True)
+    return X
 
     pass
 
-def check_ifreal(y: pd.Series) -> bool:
+def check_ifreal(y: pd.Series, threshold = 0.1) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
-    
-    pass
+    unique_nums = y.nunique()
+    total_nums = len(y)
+    if(unique_nums/total_nums < threshold):
+        return False
+    return True
 
 
 def entropy(Y: pd.Series) -> float:
@@ -33,11 +42,9 @@ def gini_index(Y: pd.Series) -> float:
     p = uniques/total
     return (1 - np.sum(p**2))
 
-
 def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
-    """
-    Function to calculate the information gain using criterion (entropy, gini index or MSE)
-    """
+   
+   #Function to calculate the information gain using criterion (entropy, gini index or MSE)
     
     # (, Discrete)
     if (check_ifreal(Y)==False):
@@ -50,10 +57,8 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
                 return (gini_index(Y) - )
         # (Real, Discrete)
         else:
-            if (criterion=='entropy'):
-                return (entropy(Y) - )
-            elif (criterion=='gini index'):
-                return (gini_index(Y) - )
+            if (criterion=='mse'):
+                return (mse_reduction(Y) - )
             
     # (, Real)
     else:
@@ -62,10 +67,6 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
         if (check_ifreal(attr)==False):
         
         # (Real, Real)
-        
-
-    pass
-
 
 def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.Series):
     """
@@ -77,11 +78,20 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
 
     return: attribute to split upon
     """
+    best_info_gain = 0
+    opt_split = None
 
     # According to wheather the features are real or discrete valued and the criterion, find the attribute from the features series with the maximum information gain (entropy or varinace based on the type of output) or minimum gini index (discrete output).
 
-    pass
+    for feature in features:
+        current_gain = information_gain(y, X[feature], criterion)
+        if(current_gain > best_info_gain):
+            best_info_gain = current_gain
+            ont_split = feature
 
+    return opt_split, best_info_gain
+
+    pass
 
 def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
     """

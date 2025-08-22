@@ -10,15 +10,23 @@ def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
     """
     Function to perform one hot encoding on the input data
     """
+    for col in X.columns:
+        if X[col].dtype == "object":
+            X = pd.concat([X, pd.get_dummies(X[col], prefix=col,dtype=int)], axis=1)
+            X.drop(col, axis=1, inplace=True)
+    return X
 
     pass
 
-def check_ifreal(y: pd.Series) -> bool:
+def check_ifreal(y: pd.Series, threshold = 0.1) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
-    
-    pass
+    unique_nums = y.nunique()
+    total_nums = len(y)
+    if(unique_nums/total_nums < threshold):
+        return False
+    return True
 
 
 def entropy(Y: pd.Series) -> float:

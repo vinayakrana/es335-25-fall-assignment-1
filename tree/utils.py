@@ -51,7 +51,7 @@ def MSE(Y: pd.Series)->float:
     return ans
 
  
-def check_criteria(Y: pd.Series, attr: pd.Series, criterion: str) -> None:
+def check_criteria(Y: pd.Series, criterion: str) -> None:
     """
     Function to check which criterion to use out of the 4 possible conditions of I/P and O/P
     """
@@ -60,13 +60,18 @@ def check_criteria(Y: pd.Series, attr: pd.Series, criterion: str) -> None:
     if (check_ifreal(Y)==False):
         # Using Entropy/GiniIndex
         if (criterion=='entropy'):
-            fn = entropy
+            fn = entropy(Y)
+            return "entropy",fn
         elif (criterion=='gini index'):
-            fn = gini_index
+            fn = gini_index(Y)
+            return "gini",fn
 
     # (, Real)
     else:
-        fn = MSE
+        fn = MSE(Y)
+        return "MSE",fn
+       
+    
 
 def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
@@ -91,8 +96,8 @@ def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> flo
         if Y_left.empty or Y_right.empty:
             continue
 
-        total_criterion = Y_left.size / Y.size * check_criteria(Y_left) + Y_right.size / Y.size * check_criteria(Y_right)
-        information_gain_value = check_criteria(Y) - total_criterion
+        total_criterion = Y_left.size / Y.size * check_criteria(Y_left, criterion)[1] + Y_right.size / Y.size * check_criteria(Y_right,criterion)[1]
+        information_gain_value = check_criteria(Y,criterion)[1] - total_criterion
 
         if information_gain_value > best_gain:
             best_threshold = threshold
@@ -106,7 +111,7 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
     Function to calculate the information gain using criterion_fn (entropy, gini index or MSE)
     """
-    criterion_fn = check_criteria(Y, attr, criterion)
+    criterion_fn = check_criteria(Y, criterion)[1]
 
     # Attribute is Real
     if (check_ifreal(attr)):

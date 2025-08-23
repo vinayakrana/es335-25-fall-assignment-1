@@ -1,6 +1,6 @@
 from typing import Union
 import pandas as pd
-
+import numpy as np
 
 def accuracy(y_hat: pd.Series, y: pd.Series) -> float:
     """
@@ -13,7 +13,8 @@ def accuracy(y_hat: pd.Series, y: pd.Series) -> float:
     ensure that the function does not fail in corner cases.
     """
     assert y_hat.size == y.size
-    # TODO: Write here
+    # TODO: 
+    return (y_hat==y).mean()
     pass
 
 
@@ -21,26 +22,38 @@ def precision(y_hat: pd.Series, y: pd.Series, cls: Union[int, str]) -> float:
     """
     Function to calculate the precision
     """
-    pass
+    TP = ((y == cls) & (y_hat == cls)).sum()
+    FP = ((y != cls) & (y_hat == cls)).sum()
+    if (TP+FP)>0:
+        return TP/(TP+FP)
+    else :
+        return 0.0
 
 
 def recall(y_hat: pd.Series, y: pd.Series, cls: Union[int, str]) -> float:
     """
     Function to calculate the recall
     """
-    pass
+    TP = ((y_hat == cls) & (y == cls)).sum()
+    FN = ((y_hat != cls) & (y == cls)).sum()
+    if (TP+FN)>0:
+        return TP/(TP+FN)
+    else :
+        return 0.0
 
 
 def rmse(y_hat: pd.Series, y: pd.Series) -> float:
     """
     Function to calculate the root-mean-squared-error(rmse)
     """
-
-    pass
+    rmse_ = ((y_hat - y) ** 2).sum() / y.size
+    rmse_ = rmse_ ** 0.5
+    return rmse_
 
 
 def mae(y_hat: pd.Series, y: pd.Series) -> float:
     """
     Function to calculate the mean-absolute-error(mae)
     """
-    pass
+    mae_ = (y_hat - y).abs().sum() / y.size
+    return mae_  

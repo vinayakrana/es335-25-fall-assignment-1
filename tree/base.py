@@ -41,10 +41,22 @@ class DecisionTree:
         """
         Funtion to run the decision tree on test inputs
         """
-
-        # Traverse the tree you constructed to return the predicted values for the given test inputs.
-
-        pass
+        
+        def predict_row(x: pd.Series) -> float:
+            curr_node = self.tree
+            while (not curr_node.is_leaf_node()):
+                if (check_ifreal(x[curr_node.attribute])):
+                    if (x[curr_node.attribute] <= curr_node.value):
+                        curr_node = curr_node.left
+                    else:
+                        curr_node = curr_node.right
+                else:
+                    if (x[curr_node.attribute] == curr_node.value):
+                        curr_node = curr_node.left
+                    else:
+                        curr_node = curr_node.right
+            return curr_node.output
+        return pd.Series([predict_row(x) for _,x in X.iterrows()])
 
     def plot(self) -> None:
         """

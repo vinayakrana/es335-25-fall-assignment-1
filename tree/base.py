@@ -13,6 +13,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from tree.utils import *
+from graphviz import Digraph
+from IPython.display import Image, display
 
 np.random.seed(42)
 
@@ -46,7 +48,8 @@ class DecisionTree:
 
         pass
 
-    def plot(self) -> None:
+    def plot(self, path = None) -> None: 
+        # if path is given, saves tree png at that location
         """
         Function to plot the tree
 
@@ -58,4 +61,54 @@ class DecisionTree:
             N: Class C
         Where Y => Yes and N => No
         """
-        pass
+
+        if not self.tree:
+            print("Tree is not created yet")
+            return 
+        
+        root = Digraph()
+
+        def addnode(node: TreeNode, parentName: str = None, edge_label: str = None):
+            node_id = str(id(node))
+            # id returns unique id which helps graphviz to identify the node
+
+            if node.is_leaf:
+                node_label = f"Prediction: {node.output}"
+            else:
+                node_label = f"?(attr {node.attribute} <= {node.value})"
+            root.node(node_id, label=node_label, shape='box' if node.is_leaf else 'ellipse')
+            if parentName:
+                root.edge(parentName, node_id, label = edge_label)
+            if node.left:
+                addnode(node.left, node_id, 'Yes')
+            if node.right:
+                addnode(node.right, node_id, 'No')
+        
+        addnode(self.tree)
+        print("\nDecision Tree Data-Structure: ")
+        print(self.print_tree())
+
+        if path:
+            root.render(path, format = 'png', view = False, cleanup = False)
+            display(Image(filename=f"{path}.png"))
+        else:
+            png_data = root.pipe(format='png')
+            display(Image(data = png_data))
+    
+    def printTree(self)->str:
+        def print_node(node: TreeNode, indent: str = ""):
+            output = ""
+            if node.is_leaf:
+                output+=f"Class: {node.output}\n"
+            else:
+                output+=f"?attr{node.attribute}<={node.value:.4f}\n"
+                output+= indent+"   Yes: "
+                output+= print_node(node.left, indent+"     ")
+                output+= indent+"   No: "
+                output+= print_node(node.right, indent+"    ")
+            return output
+        
+        if not self.tree:
+            return "Tree is not created yet"
+        else:
+            return print_node(self.tree)

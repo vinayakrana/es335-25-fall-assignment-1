@@ -52,8 +52,8 @@ for criteria in ["information_gain", "gini_index"]:
         print("Recall: ", recall(y_hat, y, cls))
 
 
-# Test case 3
-# Discrete Input and Discrete Output
+# # Test case 3
+# # Discrete Input and Discrete Output
 
 N = 30
 P = 5
@@ -71,8 +71,8 @@ for criteria in ["information_gain", "gini_index"]:
         print("Precision: ", precision(y_hat, y, cls))
         print("Recall: ", recall(y_hat, y, cls))
 
-# Test case 4
-# Discrete Input and Real Output
+# # Test case 4
+# # Discrete Input and Real Output
 
 N = 30
 P = 5

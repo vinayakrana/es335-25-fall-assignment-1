@@ -67,7 +67,7 @@ def check_criteria(Y: pd.Series, criterion: str):
     if not check_ifreal(Y):  # Discrete output case
         if criterion == 'information_gain' or criterion == 'entropy':
             return "entropy", entropy
-        elif criterion== "'gini_index": 
+        elif criterion == "gini_index": 
             return "gini_index", gini_index
         else:
             raise ValueError(f"Unknown criterion for classification: {criterion}")

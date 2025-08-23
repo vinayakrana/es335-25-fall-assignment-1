@@ -18,22 +18,29 @@ def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
 
     pass
 
-def check_ifreal(y: pd.Series, threshold = 0.1) -> bool:
+
+
+
+def check_ifreal(y: pd.Series, real_distinct_threshold =15) -> bool:
     """
     Function to check if the given series has real or discrete values
     """
-    unique_nums = y.nunique()
-    total_nums = len(y)
-    if(unique_nums/total_nums < threshold):
+    if pd.api.types.is_categorical_dtype(y):
         return False
-    return True
-
+    if pd.api.types.is_bool_dtype(y):
+        return False
+    if pd.api.types.is_float_dtype(y):
+        return True
+    if pd.api.types.is_integer_dtype(y):
+        return len(y.unique()) > real_distinct_threshold
+    if pd.api.types.is_string_dtype(y):
+        return False
+    return False
 
 def entropy(Y: pd.Series) -> float:
-    uniques = Y.value_counts()
-    total = np.size(Y)
-    p = uniques/total
-    return np.sum(-p*np.log2(p))
+    value_counts = Y.value_counts()/Y.size
+    probs = value_counts[value_counts > 0]  # ignore zeros
+    return -np.sum(probs * np.log2(probs))
 
 
 def gini_index(Y: pd.Series) -> float:
@@ -47,31 +54,27 @@ def MSE(Y: pd.Series)->float:
     Function to calculate the MSE
     """
     y_mean=np.mean(Y)
-    ans=np.sum((Y-y_mean)**2)/len(Y)
+    ans=np.sum((Y-y_mean)**2)/Y.size
     return ans
 
  
-def check_criteria(Y: pd.Series, criterion: str) -> None:
+def check_criteria(Y: pd.Series, criterion: str):
     """
     Function to check which criterion to use out of the 4 possible conditions of I/P and O/P
     """
     fn = None
     # (, Discrete)
-    if (check_ifreal(Y)==False):
-        # Using Entropy/GiniIndex
-        if (criterion=='entropy'):
-            fn = entropy(Y)
-            return "entropy",fn
-        elif (criterion=='gini index'):
-            fn = gini_index(Y)
-            return "gini",fn
-
+    if not check_ifreal(Y):  # Discrete output case
+        if criterion == 'information_gain' or criterion == 'entropy':
+            return "entropy", entropy
+        elif criterion== "'gini_index": 
+            return "gini_index", gini_index
+        else:
+            raise ValueError(f"Unknown criterion for classification: {criterion}")
     # (, Real)
     else:
-        fn = MSE(Y)
-        return "MSE",fn
-       
-    
+        return "MSE", MSE
+
 
 def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
@@ -79,6 +82,8 @@ def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> flo
 
     Returns the threshold value for best split in a given real feature
     """
+    my_criterion, criterion_func = check_criteria(Y, criterion)
+
     sorted_attr = attr.sort_values()
     if sorted_attr.size == 1:
         return None
@@ -96,8 +101,8 @@ def find_optimal_threshold(Y: pd.Series, attr: pd.Series, criterion: str) -> flo
         if Y_left.empty or Y_right.empty:
             continue
 
-        total_criterion = Y_left.size / Y.size * check_criteria(Y_left, criterion)[1] + Y_right.size / Y.size * check_criteria(Y_right,criterion)[1]
-        information_gain_value = check_criteria(Y,criterion)[1] - total_criterion
+        total_criterion = Y_left.size / Y.size * criterion_func(Y_left) + Y_right.size / Y.size * criterion_func(Y_right)
+        information_gain_value = criterion_func(Y) - total_criterion
 
         if information_gain_value > best_gain:
             best_threshold = threshold
@@ -111,7 +116,7 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
     """
     Function to calculate the information gain using criterion_fn (entropy, gini index or MSE)
     """
-    criterion_fn = check_criteria(Y, criterion)[1]
+    my_criterion, criterion_func = check_criteria(Y, criterion)
 
     # Attribute is Real
     if (check_ifreal(attr)):
@@ -119,10 +124,10 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
         if threshold is None:
             return 0
         top = Y[attr <= threshold]
-        top_p = top.size()/Y.size()
+        top_p = top.size/Y.size
         bottom = Y[attr > threshold]
-        bottom_p = bottom.size()/Y.size()
-        return criterion_fn(Y) - (top_p*criterion_fn(top) + bottom_p*criterion_fn(bottom))
+        bottom_p = bottom.size/Y.size
+        return criterion_func(Y) - (top_p*criterion_func(Y) + bottom_p*criterion_func(Y))
 
     # Attribute is Discrete
     else:
@@ -130,8 +135,8 @@ def information_gain(Y: pd.Series, attr: pd.Series, criterion: str) -> float:
         for unique in attr.unique():
             sub_attr = Y[attr==unique]
             sub_attr_p = np.size(sub_attr)/np.size(attr)
-            weighted_H += sub_attr_p*criterion_fn(sub_attr)
-        return criterion_fn(Y) - weighted_H
+            weighted_H += sub_attr_p*criterion_func(Y)
+        return criterion_func(Y) - weighted_H
 
 
 
@@ -145,18 +150,18 @@ def opt_split_attribute(X: pd.DataFrame, y: pd.Series, criterion, features: pd.S
 
     return: attribute to split upon
     """
-    best_info_gain = 0
-    opt_split = None
+    best_feature = None
+    best_gain = -np.inf
 
     # According to wheather the features are real or discrete valued and the criterion, find the attribute from the features series with the maximum information gain (entropy or varinace based on the type of output) or minimum gini index (discrete output).
 
     for feature in features:
         current_gain = information_gain(y, X[feature], criterion)
-        if(current_gain > best_info_gain):
-            best_info_gain = current_gain
-            opt_split = feature
+        if(current_gain > best_gain):
+            best_feature = feature
+            best_gain = current_gain
 
-    return opt_split, best_info_gain
+    return best_feature
 
 def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
     """
@@ -178,9 +183,9 @@ def split_data(X: pd.DataFrame, y: pd.Series, attribute, value):
         left_X = X[X[attribute] == value]
         right_X = X[X[attribute] != value]
 
-    left_y = y[left_X.index]
-    right_y = y[right_X.index]
+    left_y = y.loc[left_X.index]
+    right_y = y.loc[right_X.index]
 
-    return left_X, right_X, left_y, right_y
+    return left_X, left_y, right_X, right_y
 
     

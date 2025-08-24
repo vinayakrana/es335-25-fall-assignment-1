@@ -18,6 +18,9 @@ plt.scatter(X[:, 0], X[:, 1], c=y)
 X = pd.DataFrame(X, columns=['feature_1', 'feature_2'])
 y = pd.Series(y)
 
+# Q. 2a
+
+print("\nQ. 2a\n")
 # 70% of data used for train and 30% of the data used for test
 split = int(0.7 * X.shape[0]) #70% of the number of rows
 X_train = X.iloc[:split]
@@ -46,3 +49,30 @@ print("Accuracy of the model: ", np.round(accuracy(y_test.reset_index(drop=True)
 for cls in np.unique(y_test):
   print(f"Precision for class {cls} is {np.round(precision(y_test.reset_index(drop=True), y_predicted.reset_index(drop=True), cls), 5)}")
   print(f"Recall for class {cls} is {np.round(recall(y_test.reset_index(drop=True), y_predicted.reset_index(drop=True), cls), 5)}")
+
+# Q. 2b
+
+print("\nQ. 2b")
+
+folds = 5
+fold_size = X.shape[0] // folds
+fold_accuracy = []
+
+for i in range(folds):
+  start = i*fold_size
+  end = (i+1)*fold_size
+  X_test = X.iloc[start:end]
+  y_test = y.iloc[start:end]
+
+  X_train = pd.concat([X.iloc[:start], X.iloc[end:]])
+  y_train = pd.concat([y.iloc[:start], y.iloc[end:]])
+
+  dt_classifier = DecisionTree(criterion='information_gain', max_depth=5)
+  dt_classifier.fit(X_train, y_train)
+
+  y_pred = dt_classifier.predict(X_test)
+  accuracy_i = np.round(accuracy(y_test.reset_index(drop=True), y_pred.reset_index(drop=True)), 5)
+  print(f"\nFold {i} accuracy is: {accuracy_i}")
+  fold_accuracy.append(accuracy_i)
+
+print("\nMean accuracy accros all folds are: ", np.round(np.mean(fold_accuracy), 5))

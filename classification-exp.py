@@ -76,3 +76,62 @@ for i in range(folds):
   fold_accuracy.append(accuracy_i)
 
 print("\nMean accuracy accros all folds are: ", np.round(np.mean(fold_accuracy), 5))
+
+# Nested-Cross Validation
+
+print("\nNested Cross Validation")
+
+# Outer cross validation splits the data into train and test
+# Inner cross validation splits the train data into train and validation
+# Best hyper-parameter is chosen from inner CV
+
+depth_values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+for i in range(folds):
+  # Outer Cross Validation
+  start = i*fold_size
+  end = (i+1)*fold_size
+  X_test_outer = X.iloc[start:end]
+  y_test_outer = y.iloc[start:end]
+
+  X_train_outer = pd.concat([X.iloc[:start], X.iloc[end:]])
+  y_train_outer = pd.concat([y.iloc[:start], y.iloc[end:]])
+
+  # Inner Cross Validation
+  inner_fold_size = X_train_outer.shape[0] // folds
+  depth_performance = {}
+
+  for depth in depth_values:
+    inner_accuracy = []
+    for j in range(folds):
+      inner_start = j*inner_fold_size
+      inner_end = (j+1)*inner_fold_size
+
+      X_valid = X_train_outer.iloc[inner_start:inner_end]
+      y_valid = y_train_outer.iloc[inner_start:inner_end]
+
+      X_train_inner = pd.concat([X_train_outer.iloc[:inner_start], X_train_outer.iloc[inner_end:]])
+      y_train_inner = pd.concat([y_train_outer.iloc[:inner_start], y_train_outer.iloc[inner_end:]])
+
+      model = DecisionTree(criterion='information_gain', max_depth=depth)
+      model.fit(X_train_inner, y_train_inner)
+      y_value_predict = model.predict(X_valid)
+      acc = accuracy(y_valid.reset_index(drop=True), y_value_predict.reset_index(drop=True))
+      inner_accuracy.append(acc)
+    
+    depth_performance[depth] = np.mean(inner_accuracy)
+  
+  # Taking depth at which best accuracy is found
+  best_depth = max(depth_performance, key=depth_performance.get)
+  print(f"Best depth chosen for fold {i} is: {best_depth}")
+
+  final_model= DecisionTree(criterion='information_gain', max_depth=best_depth)
+  final_model.fit(X_train_outer, y_train_outer)
+  y_final_predict = final_model.predict(X_test_outer)
+  
+  outer_accuracy = accuracy(y_final_predict.reset_index(drop=True), y_test_outer.reset_index(drop=True))
+  print(f"Accuracy of fold {i} is: {outer_accuracy}")
+  fold_accuracy.append(outer_accuracy)
+
+# Taking average of all fold accuracies.
+print(f"Mean accuracy accross all folds is: {np.round(np.mean(fold_accuracy), 5)}")

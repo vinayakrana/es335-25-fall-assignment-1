@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "lumyst-mcp-server": {
+      "url": "http://localhost:60365/mcp"
+    }
+  }
+}

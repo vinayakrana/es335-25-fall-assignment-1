@@ -21,21 +21,30 @@ def one_hot_encoding(X: pd.DataFrame) -> pd.DataFrame:
 
 
 
-def check_ifreal(y: pd.Series, real_distinct_threshold =15) -> bool:
+def check_ifreal(y, real_distinct_threshold =15) -> bool:
+    if isinstance(y, pd.Series):
+        if pd.api.types.is_categorical_dtype(y):
+            return False
+        if pd.api.types.is_bool_dtype(y):
+            return False
+        if pd.api.types.is_float_dtype(y):
+            return True
+        if pd.api.types.is_integer_dtype(y):
+            return len(y.unique()) > real_distinct_threshold
+        if pd.api.types.is_string_dtype(y):
+            return False
+        return False
+
+    # Case 2: y is a scalar (prediction time)
+    if isinstance(y, (float, np.floating)):
+        return True
+    if isinstance(y, (int, np.integer)):
+        return False
+
     """
     Function to check if the given series has real or discrete values
     """
-    if pd.api.types.is_categorical_dtype(y):
-        return False
-    if pd.api.types.is_bool_dtype(y):
-        return False
-    if pd.api.types.is_float_dtype(y):
-        return True
-    if pd.api.types.is_integer_dtype(y):
-        return len(y.unique()) > real_distinct_threshold
-    if pd.api.types.is_string_dtype(y):
-        return False
-    return False
+    
 
 def entropy(Y: pd.Series) -> float:
     value_counts = Y.value_counts()/Y.size
